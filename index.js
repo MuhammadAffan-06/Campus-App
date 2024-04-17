@@ -13,11 +13,11 @@ app.listen(port, () => {
 })
 
 app.get('/', (req, res) => {
-    res.send("API working");
+    res.send("Testing the environment");
 })
 
 
-//API for the admin to login and see the details of students and company.
+//API for the admin to login.
 app.post('/admin/login', (req, res) => {
     const { email, password } = req.body;
 
@@ -44,10 +44,28 @@ app.post('/admin/login', (req, res) => {
         }
     });
 });
+//API for admin to get the records of company registered
+app.get('/admin/companyregistration', async (req, res) => {
+    connection.query("SELECT DISTINCT name,email FROM company", (error, results) => {
+        try {
+            if (results.length === 0) {
+                return res.status(404).json({ message: "There is no data in the database" });
+            }
+            res.status(200).json(results);
+        }
+        catch {
 
-//API for a company to register a account
+            res.status(401).json({ message: "Error fetching the data", error })
+        }
 
-app.post('/companies/registration', async (req, res) => {
+    })
+})
+//API to block a user based on his email
+
+
+//API for a company to register a account which waits for the admin approval first 
+
+app.post('/company/registration', async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!email || !name || !password) {
@@ -57,28 +75,37 @@ app.post('/companies/registration', async (req, res) => {
     if (!validator.isEmail(email)) {
         return res.status(401).json({ message: 'The email format is incorrect' });
     }
-    connection.query("SELECT * FROM company WHERE email=?", [email], async (error, results) => {
+    connection.query("SELECT * FROM company WHERE email=?", (email), (error, results) => {
+        try {
+            if (results.length > 0) {
+                return res.status(401).json({ message: "Email already registered" });
+            }
+
+        } catch (error) {
+            console.log(error);
+        }
+    })
+    connection.query("SELECT * FROM temporary_company WHERE email=?", [email], async (error, results) => {
         if (error) {
             console.error('Error checking email existence:', error);
             return res.status(500).json({ error: "Failed to create an account" });
         }
 
-        if (results.length > 0) {
-            console.error("Email already exists");
-            return res.status(401).json({ error: "Email already in use" });
-        }
 
         try {
             // Hashing the password
             const hashedPassword = await bcrypt.hash(password, 10);
-
+            if (results.length > 0) {
+                console.error("Email already exists");
+                return res.status(401).json({ error: "Email already in use" });
+            }
             // Insert data into the database
-            connection.query("INSERT INTO company (name, email, password) VALUES (? , ? , ?)", [name, email, hashedPassword], (error, results) => {
+            connection.query("INSERT INTO temporary_company (name, email, password) VALUES (? , ? , ?)", [name, email, hashedPassword], (error, results) => {
                 if (error) {
                     console.error('Error making the account for company:', error);
                     return res.status(500).json({ error: "Error making the account for company" });
                 }
-                res.status(200).json({ message: "Created an account for company" });
+                return res.status(200).json({ message: "Account Created ! Waiting for the admin approval" });
             });
         } catch (error) {
             console.error('Error hashing password:', error);
@@ -86,8 +113,44 @@ app.post('/companies/registration', async (req, res) => {
         }
     });
 });
-//API to login the company account
+//Admin API to approve the company registration
+app.post('/admin/companyregistration/approval', (req, res) => {
+    const { email } = req.body;
+    connection.query("SELECT * FROM temporary_company WHERE email=?", [email], (error, results) => {
+        if (error) {
+            res.status(401).json({ message: "Error fetching the data from company" });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: "There is no company available to approve with this username" })
+        }
+        const companyData = results[0];
 
+        connection.query("INSERT INTO company (name,email,password) VALUES (?,?,?)", [companyData.name, companyData.email, companyData.password], (error, results) => {
+            try {
+                if (error) {
+                    return res.status(401).json({ message: "Failed to enter data to main table" });
+                }
+                if (companyData.email > 0) {
+                    return res.status(401).json({ message: "Email already exist in main table" });
+                }
+                res.status(200).json({ message: "Successfully created a company" });
+
+            } catch (error) {
+                res.status(404).json({ message: "Error creating company" });
+            }
+
+        })
+        console.log(companyData.email);
+        connection.query("DELETE FROM temporary_company WHERE email =?", [companyData.email], (error, results) => {
+            try {
+                res.status(200);
+            } catch (error) {
+                res.status(401).json({ message: "Error deleting temporary company" });
+            }
+        })
+    })
+})
+//API to login the company account
 app.post('/companies/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
