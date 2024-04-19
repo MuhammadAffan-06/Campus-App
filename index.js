@@ -4,6 +4,7 @@ const dotenv = require('dotenv').config(); //Kept port private with dotenv file
 const validator = require('validator');
 const mysql = require('mysql');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const connection = require('./dbConnection/dbConnection'); //Connecting to MySQL
 const port = process.env.PORT || 5000; //Defined a port for the server
 
@@ -16,7 +17,7 @@ app.get('/', (req, res) => {
     res.send("Testing the environment");
 })
 //API for the create a new admin
-app.post('/createadmin', async(req, res) => {
+app.post('/createadmin', async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
         return res.status(401).json({ message: "Credentials required" });
@@ -49,7 +50,7 @@ app.post('/login', (req, res) => {
     connection.query("SELECT * FROM admin WHERE email=? UNION ALL SELECT * FROM company WHERE email=?", [email, email], (error, results) => {
         if (error) {
             console.error(error);
-            res.status(500).json({ message: "Error Fetching data from databases" });
+            return res.status(500).json({ message: "Error Fetching data from databases" });
         }
         else {
             const user = results[0];
@@ -57,13 +58,49 @@ app.post('/login', (req, res) => {
             if (!validPassword) {
                 return res.status(401).json({ message: "Invalid password" });
             }
-            return res.status(200).json({ message: `${user.name} logged in successfully` });
+            const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET_KEY);
+            const data =
+            {
+                Name: user.name,
+                Email: user.email,
+                token: token,
+            }
+            return res.status(200).json(data);
         }
     })
 
 
 });
 
+app.post('/registration', async (req, res) => {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+        return res.status(400).json({ message: "Credentials Required" });
+    }
+    if (!validator.isEmail(email)) {
+        return res.status(401).json({ message: "Email format is not valid" });
+    }
+    
+
+    try {
+        await connection.beginTransaction();
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await connection.query("INSERT INTO company (name, email, password, approved) VALUES (?,?,?,?)", [name, email, hashedPassword, false]);
+
+        await connection.query("UPDATE company SET approved=true WHERE email=?", [email]);
+
+        await connection.commit();
+
+        return res.status(200).json({ message: "Company registration successful and approved." });
+    } catch (error) {
+        console.error(error);
+        await connection.rollback();
+        return res.status(500).json({ message: "Error during registration" });
+    }
+});
 // //API for admin to get the records of company registered
 // app.get('/admin/companyregistration', async (req, res) => {
 //     connection.query("SELECT DISTINCT name,email FROM company", (error, results) => {
