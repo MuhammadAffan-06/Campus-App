@@ -35,45 +35,89 @@ app.post('/createadmin', async (req, res) => {
         return res.status(200).json({ message: "Admin created successfully" });
     })
 })
+//API for the admin approval and block/unblock
 
+app.put('/admin/approve', async (req, res) => {
+    const { email, approved, block } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+    }
+
+    try {
+        // Fetch company data
+        connection.query("SELECT * FROM company WHERE email=?", [email], (error, results) => {
+            if (error) {
+                return res.status(401);
+            }
+            if (results === 0) {
+                return res.status(404).json({ message: "Company not found" });
+            }
+        })
+        await connection.query("UPDATE company SET block=?, approved=? WHERE email=?", [block, approved, email]);
+
+        let statusMessage = `${email}`;
+        if (approved) {
+            statusMessage += ' approved';
+        }
+        if (block) {
+            statusMessage += ' and blocked';
+        } else {
+            statusMessage += ' unblocked';
+        }
+
+        return res.status(200).json({ message: statusMessage });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Error updating company status" });
+    }
+});
 
 //API for the admin,company and student to login.
-app.post('/login', (req, res) => {
+
+app.post('/login', async (req, res) => {
     const { email, password } = req.body;
+
     if (!email || !password) {
-        return res.status(401).json("Credentials required");
-    } 45
-    if (!validator.isEmail(email)) {
-        return res.status(401).json("Email format is not valid");
+        return res.status(401).json({ message: "Email and password are required" });
     }
-    // Query the databases to check for the email and password
-    connection.query("SELECT * FROM admin WHERE email=? UNION ALL SELECT * FROM company WHERE email=?", [email, email], (error, results) => {
+    connection.query("SELECT * FROM admin WHERE email=? UNION ALL SELECT * FROM company WHERE email=? UNION ALL SELECT * FROM student WHERE email=?", [email, email, email], (error, results) => {
         if (error) {
             console.error(error);
             return res.status(500).json({ message: "Error Fetching data from databases" });
         }
-        else {
-            const user = results[0];
-            const validPassword = bcrypt.compare(user.password, password);
+
+        if (results.length === 0) {
+            return res.status(401).json({ message: "Invalid email or password" });
+        }
+
+        const user = results[0];
+        bcrypt.compare(password, user.password, (err, validPassword) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ message: "Error comparing passwords" });
+            }
+
             if (!validPassword) {
                 return res.status(401).json({ message: "Invalid password" });
             }
-            const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET_KEY);
-            const data =
-            {
-                Name: user.name,
-                Email: user.email,
-                token: token,
-            }
-            return res.status(200).json(data);
-        }
-    })
 
+            const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET_KEY);
+            const data = {
+                name: user.name,
+                email: user.email,
+                token: token,
+            };
+
+            console.log(data);
+            res.status(200).json(data);
+        });
+    });
 
 });
 
 app.post('/registration', async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, type, category } = req.body;
 
     if (!name || !email || !password) {
         return res.status(400).json({ message: "Credentials Required" });
@@ -81,26 +125,65 @@ app.post('/registration', async (req, res) => {
     if (!validator.isEmail(email)) {
         return res.status(401).json({ message: "Email format is not valid" });
     }
-    
 
     try {
         await connection.beginTransaction();
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        await connection.query("INSERT INTO company (name, email, password, approved) VALUES (?,?,?,?)", [name, email, hashedPassword, false]);
+        const escapedEmail = connection.escape(email);
 
-        await connection.query("UPDATE company SET approved=true WHERE email=?", [email]);
+        // Checking for duplicate Email
+        let checkEmailQuery;
+        if (type === 'student') {
+            checkEmailQuery = `SELECT * FROM student WHERE email = ${escapedEmail}`;
+        } else if (type === 'company') {
+            checkEmailQuery = `SELECT * FROM company WHERE email = ${escapedEmail}`;
+        } else {
+            return res.status(400).json({ message: "Invalid registration type" });
+        }
 
-        await connection.commit();
+        await connection.query(checkEmailQuery, async (error, results) => {
+            if (error) {
+                console.error(error);
+                await connection.rollback();
+                return res.status(500).json({ message: "Error during registration" });
+            }
 
-        return res.status(200).json({ message: "Company registration successful and approved." });
+            if (results.length > 0) {
+                await connection.rollback();
+                return res.status(400).json({ message: "Email already exists in the database" });
+            }
+
+            let insertQuery;
+            let insertValues;
+
+            if (type === 'student') {
+                if (!category) {
+                    return res.status(400).json({ message: "Category not Found" });
+                }
+                insertQuery = "INSERT INTO student (name, email, password, category, approved, block) VALUES (?,?,?,?,?,?)";
+                insertValues = [name, email, hashedPassword, category, false, true];
+            } else if (type === 'company') {
+                insertQuery = "INSERT INTO company (name, email, password, approved, block) VALUES (?,?,?,?,?)";
+                insertValues = [name, email, hashedPassword, false, true];
+            } else {
+                return res.status(400).json({ message: "Invalid registration type" });
+            }
+
+            await connection.query(insertQuery, insertValues);
+
+            await connection.commit();
+
+            return res.status(201).json({ message: "Registration successful. Awaiting admin approval and Initially Unblocked." });
+        });
     } catch (error) {
         console.error(error);
         await connection.rollback();
         return res.status(500).json({ message: "Error during registration" });
     }
 });
+
 // //API for admin to get the records of company registered
 // app.get('/admin/companyregistration', async (req, res) => {
 //     connection.query("SELECT DISTINCT name,email FROM company", (error, results) => {
