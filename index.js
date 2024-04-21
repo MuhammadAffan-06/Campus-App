@@ -36,25 +36,24 @@ app.post('/createadmin', async (req, res) => {
     })
 })
 //API for the admin approval and block/unblock
-
 app.put('/admin/approve', async (req, res) => {
-    const { email, approved, block } = req.body;
+    const { email, approved, block, userType } = req.body;
 
-    if (!email) {
-        return res.status(400).json({ message: "Email is required" });
+    if (!email || !userType || (userType !== 'company' && userType !== 'student')) {
+        return res.status(400).json({ message: "Invalid user type or missing email" });
     }
 
     try {
-        // Fetch company data
-        connection.query("SELECT * FROM company WHERE email=?", [email], (error, results) => {
-            if (error) {
-                return res.status(401);
-            }
-            if (results === 0) {
-                return res.status(404).json({ message: "Company not found" });
-            }
-        })
-        await connection.query("UPDATE company SET block=?, approved=? WHERE email=?", [block, approved, email]);
+        let updatedTable; // To store the updated table name dynamically
+        if (userType === 'company') {
+            updatedTable = 'company';
+        } else {
+            updatedTable = 'student';
+        }
+
+        const updateQuery = `UPDATE ${updatedTable} SET block=?, approved=? WHERE email=?`; // Use template literals for dynamic table name
+
+        await connection.query(updateQuery, [block, approved, email]);
 
         let statusMessage = `${email}`;
         if (approved) {
@@ -69,10 +68,34 @@ app.put('/admin/approve', async (req, res) => {
         return res.status(200).json({ message: statusMessage });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: "Error updating company status" });
+        return res.status(500).json({ message: "Error updating user status" });
     }
 });
+//API for admin to get the data about companies
+app.get('/admin/companies', (req, res) => {
+    connection.query("SELECT name,email,approved,block FROM company", (error, results) => {
+        if (error) {
+            return res.status(401).json("Error fetching the data from database");
+        }
+        else {
 
+            return res.status(200).json(results);
+        }
+    })
+})
+
+//API for admin to get the data about students
+app.get('/admin/students', (req, res) => {
+    connection.query("SELECT name,email,approved,block,category FROM student", (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(401).json({ message: "Error fetching the data" })
+        }
+        else {
+            return res.status(200).json(results);
+        }
+    })
+})
 //API for the admin,company and student to login.
 
 app.post('/login', async (req, res) => {
@@ -115,7 +138,7 @@ app.post('/login', async (req, res) => {
     });
 
 });
-
+//API for registering companies and students both
 app.post('/registration', async (req, res) => {
     const { name, email, password, type, category } = req.body;
 
@@ -183,6 +206,28 @@ app.post('/registration', async (req, res) => {
         return res.status(500).json({ message: "Error during registration" });
     }
 });
+
+//API for the companies to post a job
+app.post('/company/jobpost', (req, res) => {
+    const { email, jobtitle, address, education, experience } = req.body;
+    connection.query("INSERT INTO company_job_post (email, jobtitle, address, education, experience) VALUES (?, ?, ?, ?, ?)", [email, jobtitle, address, education, experience], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(200).json({ message: "Error Inserting data" })
+        }
+        if (!validator.isEmail(email)) {
+            return res.status(403).json({ message: "Invalid email format" });
+        }
+        else {
+            res.status(200).json({ message: "Successfully posted a job" });
+        }
+    })
+
+})
+
+
+
+
 
 // //API for admin to get the records of company registered
 // app.get('/admin/companyregistration', async (req, res) => {
