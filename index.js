@@ -1,9 +1,9 @@
 const express = require('express');  //Creating an Express.js Server
 const app = express(); //Initializing an Express.js Server
 const dotenv = require('dotenv').config(); //Kept port private with dotenv file
-const validator = require('validator');
-const mysql = require('mysql');
-const bcrypt = require('bcrypt');
+const validator = require('validator'); //To check email format
+const mysql = require('mysql'); //Connecting to mysql server
+const bcrypt = require('bcrypt'); //To hash password
 const jwt = require('jsonwebtoken');
 const connection = require('./dbConnection/dbConnection'); //Connecting to MySQL
 const port = process.env.PORT || 5000; //Defined a port for the server
@@ -44,15 +44,14 @@ app.put('/admin/approve', async (req, res) => {
     }
 
     try {
-        let updatedTable; // To store the updated table name dynamically
+        let updatedTable;
         if (userType === 'company') {
             updatedTable = 'company';
         } else {
             updatedTable = 'student';
         }
 
-        const updateQuery = `UPDATE ${updatedTable} SET block=?, approved=? WHERE email=?`; // Use template literals for dynamic table name
-
+        const updateQuery = `UPDATE ${updatedTable} SET block=?, approved=? WHERE email=?`;
         await connection.query(updateQuery, [block, approved, email]);
 
         let statusMessage = `${email}`;
@@ -77,6 +76,9 @@ app.get('/admin/companies', (req, res) => {
         if (error) {
             return res.status(401).json("Error fetching the data from database");
         }
+        if (results.length === 0) {
+            return res.status(404).json("No Data Found in the Database");
+        }
         else {
 
             return res.status(200).json(results);
@@ -90,6 +92,9 @@ app.get('/admin/students', (req, res) => {
         if (error) {
             console.error(error);
             return res.status(401).json({ message: "Error fetching the data" })
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: "No results found from database" });
         }
         else {
             return res.status(200).json(results);
@@ -113,11 +118,14 @@ app.post('/login', async (req, res) => {
         if (results.length === 0) {
             return res.status(401).json({ message: "Invalid email or password" });
         }
-
         const user = results[0];
-        bcrypt.compare(password, user.password, (err, validPassword) => {
-            if (err) {
-                console.error(err);
+        if(user.approved == false)
+        {
+            return res.status(403).json({message:"This id is not approved yet"});
+        }
+        bcrypt.compare(password, user.password, (error, validPassword) => {
+            if (error) {
+                console.error(error);
                 return res.status(500).json({ message: "Error comparing passwords" });
             }
 
@@ -188,8 +196,8 @@ app.post('/registration', async (req, res) => {
                 insertQuery = "INSERT INTO student (name, email, password, category, approved, block) VALUES (?,?,?,?,?,?)";
                 insertValues = [name, email, hashedPassword, category, false, true];
             } else if (type === 'company') {
-                insertQuery = "INSERT INTO company (name, email, password, approved, block) VALUES (?,?,?,?,?)";
-                insertValues = [name, email, hashedPassword, false, true];
+                insertQuery = "INSERT INTO company (name, email, password, category, approved, block) VALUES (?,?,?,?,?,?)";
+                insertValues = [name, email, hashedPassword, false, false,false];
             } else {
                 return res.status(400).json({ message: "Invalid registration type" });
             }
