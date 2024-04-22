@@ -24,7 +24,7 @@ app.post('/createadmin', async (req, res) => {
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log(hashedPassword);
-    connection.query("INSERT INTO admin (name,email,password) VALUES (? , ?, ?)", [name, email, hashedPassword], (error, results) => {
+    connection.query("INSERT INTO admin (name,email,password,category) VALUES (? , ?, ?,?)", [name, email, hashedPassword, false], (error, results) => {
         if (error) {
             console.error(error);
             return res.status(500).json("Error creating admin");
@@ -119,9 +119,8 @@ app.post('/login', async (req, res) => {
             return res.status(401).json({ message: "Invalid email or password" });
         }
         const user = results[0];
-        if(user.approved == false)
-        {
-            return res.status(403).json({message:"This id is not approved yet"});
+        if (user.approved == false) {
+            return res.status(403).json({ message: "This id is not approved yet" });
         }
         bcrypt.compare(password, user.password, (error, validPassword) => {
             if (error) {
@@ -197,7 +196,7 @@ app.post('/registration', async (req, res) => {
                 insertValues = [name, email, hashedPassword, category, false, true];
             } else if (type === 'company') {
                 insertQuery = "INSERT INTO company (name, email, password, category, approved, block) VALUES (?,?,?,?,?,?)";
-                insertValues = [name, email, hashedPassword, false, false,false];
+                insertValues = [name, email, hashedPassword, false, false, false];
             } else {
                 return res.status(400).json({ message: "Invalid registration type" });
             }
