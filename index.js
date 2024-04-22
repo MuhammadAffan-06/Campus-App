@@ -13,6 +13,22 @@ app.listen(port, () => {
     console.log(`Listening on http://localhost:${port}`); //Listening with a port
 })
 
+function verifyToken(req,res,next) //Middleware for verification of APIs
+{   
+    const bearerHeader = req.headers('authorization');
+    if(typeof(bearerHeader) !== 'undefined')
+    {
+        const bearer = bearerHeader.split("");
+        const token = bearer[1];
+    }
+    else
+    {
+        res.send({
+            message: "Invalid bearer token"
+        })
+    }
+}
+
 app.get('/', (req, res) => {
     res.send("Testing the environment");
 })
@@ -23,16 +39,20 @@ app.post('/createadmin', async (req, res) => {
         return res.status(401).json({ message: "Credentials required" });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log(hashedPassword);
-    connection.query("INSERT INTO admin (name,email,password,category) VALUES (? , ?, ?,?)", [name, email, hashedPassword, false], (error, results) => {
-        if (error) {
-            console.error(error);
-            return res.status(500).json("Error creating admin");
+    connection.query("SELECT email FROM admin", (error, results) => {
+        const admin = results[0];
+        console.log(admin);
+        if (admin.email == email) {
+            return res.status(403).json({ message: "Email already in use" });
         }
-        if (results.email === email) {
-            return res.status(401).json({ message: "Email already exists" });
-        }
-        return res.status(200).json({ message: "Admin created successfully" });
+        connection.query("INSERT INTO admin (name,email,password,category) VALUES (? , ?, ?,?)", [name, email, hashedPassword, false], (error, results) => {
+            if (error) {
+                console.error(error);
+                return res.status(500).json("Error creating admin");
+            }
+
+            return res.status(200).json({ message: "Admin created successfully" });
+        })
     })
 })
 //API for the admin approval and block/unblock
