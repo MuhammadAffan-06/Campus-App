@@ -13,21 +13,31 @@ app.listen(port, () => {
     console.log(`Listening on http://localhost:${port}`); //Listening with a port
 })
 
-function verifyToken(req,res,next) //Middleware for verification of APIs
-{   
-    const bearerHeader = req.headers('authorization');
-    if(typeof(bearerHeader) !== 'undefined')
-    {
-        const bearer = bearerHeader.split("");
+function verifyToken(req, res, next) {
+    const bearerHeader = req.headers['authorization'];
+
+    if (typeof bearerHeader !== 'undefined') {
+        const bearer = bearerHeader.split(' ');
         const token = bearer[1];
-    }
-    else
-    {
-        res.send({
-            message: "Invalid bearer token"
-        })
+
+        // Implement JWT verification logic here (replace with your library)
+        jwt.verify(token, process.env.JWT_SECRET_KEY, (error, decoded) => {
+            if (error) {
+                console.error(error);
+                return res.status(403).json({ message: "Invalid or expired token" });
+            }
+
+            // Attach decoded user information to the request object
+            req.user = decoded;
+            next();
+        });
+    } else {
+        res.status(401).json({ message: "Authorization token missing" });
     }
 }
+
+
+
 
 app.get('/', (req, res) => {
     res.send("Testing the environment");
@@ -235,22 +245,33 @@ app.post('/registration', async (req, res) => {
 });
 
 //API for the companies to post a job
-app.post('/company/jobpost', (req, res) => {
-    const { email, jobtitle, address, education, experience } = req.body;
-    connection.query("INSERT INTO company_job_post (email, jobtitle, address, education, experience) VALUES (?, ?, ?, ?, ?)", [email, jobtitle, address, education, experience], (error, results) => {
-        if (error) {
-            console.error(error);
-            return res.status(200).json({ message: "Error Inserting data" })
-        }
-        if (!validator.isEmail(email)) {
-            return res.status(403).json({ message: "Invalid email format" });
-        }
-        else {
-            res.status(200).json({ message: "Successfully posted a job" });
-        }
-    })
+app.post('/company/jobpost', verifyToken, (req, res) => {
+    const { jobtitle, address, education, experience } = req.body;
+    if(!jobtitle || !address || !education || !experience)
+    {
+        return res.status(404).json({message: "Fill out all th fields carefully!"});
+    }
+    if (req.user.email !== undefined) { // Check if email exists in decoded user info
 
-})
+        connection.query(
+            "INSERT INTO company_job_post (email, jobtitle, address, education, experience) VALUES (?, ?, ?, ?, ?)",
+            [req.user.email, jobtitle, address, education, experience],
+            (error, results) => {
+                if (error) {
+                    console.error(error);
+                    return res.status(401).json({ message: "Error inserting job post" });
+                }
+                return res.status(200).json({ message: "Job post successfully" });
+            }
+        );
+    } else {
+        res.status(400).json({ message: "Invalid user information in token" });
+    }
+});
+
+//API for the students to apply for the job
+
+
 
 
 
