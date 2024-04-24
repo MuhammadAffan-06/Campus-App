@@ -162,10 +162,11 @@ app.post('/login', async (req, res) => {
                 return res.status(401).json({ message: "Invalid password" });
             }
 
-            const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET_KEY);
+            const token = jwt.sign({ email: user.email, category: user.category }, process.env.JWT_SECRET_KEY);
             const data = {
                 name: user.name,
                 email: user.email,
+                category: user.category,
                 token: token,
             };
 
@@ -247,9 +248,8 @@ app.post('/registration', async (req, res) => {
 //API for the companies to post a job
 app.post('/company/jobpost', verifyToken, (req, res) => {
     const { jobtitle, address, education, experience } = req.body;
-    if(!jobtitle || !address || !education || !experience)
-    {
-        return res.status(404).json({message: "Fill out all th fields carefully!"});
+    if (!jobtitle || !address || !education || !experience) {
+        return res.status(404).json({ message: "Fill out all th fields carefully!" });
     }
     if (req.user.email !== undefined) { // Check if email exists in decoded user info
 
@@ -271,7 +271,20 @@ app.post('/company/jobpost', verifyToken, (req, res) => {
 
 //API for the students to apply for the job
 
-
+app.post('/students/apply', verifyToken, (req, res) => {
+    const studentExperience = req.user.category;
+    console.log(studentExperience);
+    connection.query("SELECT * FROM company_job_post WHERE experience=? ", [studentExperience], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Error Fetching data from " })
+        }
+        const data = results[0];
+        if (studentExperience == data.experience) {
+          
+        }
+    })
+});
 
 
 
