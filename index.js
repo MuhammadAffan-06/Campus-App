@@ -49,22 +49,30 @@ app.post('/createadmin', async (req, res) => {
         return res.status(401).json({ message: "Credentials required" });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    connection.query("SELECT email FROM admin", (error, results) => {
-        const admin = results[0];
-        console.log(admin);
-        if (admin.email == email) {
-            return res.status(403).json({ message: "Email already in use" });
+    connection.query("SELECT * FROM admin", (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Error querying database" });
         }
-        connection.query("INSERT INTO admin (name,email,password,category) VALUES (? , ?, ?,?)", [name, email, hashedPassword, false], (error, results) => {
+
+        if (results.length > 0) {
+            const admin = results[0];
+            if (admin.email == email) {
+                return res.status(403).json({ message: "Email already in use" });
+            }
+        }
+
+        connection.query("INSERT INTO admin (name, email, password, category) VALUES (?, ?, ?, ?)", [name, email, hashedPassword, false], (error, results) => {
             if (error) {
                 console.error(error);
-                return res.status(500).json("Error creating admin");
+                return res.status(500).json({ message: "Error creating admin" });
             }
 
             return res.status(200).json({ message: "Admin created successfully" });
-        })
-    })
-})
+        });
+    });
+});
+
 //API for the admin approval and block/unblock
 app.put('/admin/approve', async (req, res) => {
     const { email, approved, block, userType } = req.body;
@@ -101,7 +109,7 @@ app.put('/admin/approve', async (req, res) => {
     }
 });
 //API for admin to get the data about companies
-app.get('/admin/companies', (req, res) => {
+app.get('/admin/companies', verifyToken, (req, res) => {
     connection.query("SELECT name,email,approved,block FROM company", (error, results) => {
         if (error) {
             return res.status(401).json("Error fetching the data from database");
@@ -117,7 +125,7 @@ app.get('/admin/companies', (req, res) => {
 })
 
 //API for admin to get the data about students
-app.get('/admin/students', (req, res) => {
+app.get('/admin/students', verifyToken, (req, res) => {
     connection.query("SELECT name,email,approved,block,category FROM student", (error, results) => {
         if (error) {
             console.error(error);
@@ -131,6 +139,17 @@ app.get('/admin/students', (req, res) => {
         }
     })
 })
+//API for the admin to fetch job posted data
+app.get('/admin/jobsposted', verifyToken, (req, res) => {
+
+    connection.query("SELECT * FROM  company_job_post", (error, results) => {
+        if (error) {
+            res.status(401).json("Error fetching data");
+        }
+        return res.status(200).json(results);
+    })
+})
+
 //API for the admin,company and student to login.
 
 app.post('/login', async (req, res) => {
@@ -251,7 +270,7 @@ app.post('/company/jobpost', verifyToken, (req, res) => {
     if (!jobtitle || !address || !education || !experience) {
         return res.status(404).json({ message: "Fill out all th fields carefully!" });
     }
-    if (req.user.email !== undefined) { // Check if email exists in decoded user info
+    if (req.user.email !== undefined) {
 
         connection.query(
             "INSERT INTO company_job_post (email, jobtitle, address, education, experience) VALUES (?, ?, ?, ?, ?)",
@@ -277,11 +296,49 @@ app.post('/students/apply', verifyToken, (req, res) => {
     connection.query("SELECT * FROM company_job_post WHERE experience=? ", [studentExperience], (error, results) => {
         if (error) {
             console.error(error);
-            return res.status(500).json({ message: "Error Fetching data from " })
+            return res.status(500).json({ message: "Error Fetching data from database" })
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: "No job post found with the specified experience" });
         }
         const data = results[0];
         if (studentExperience == data.experience) {
-          
+            let currentApplications = data.applications || [];
+            if (!currentApplications) {
+                // If null or undefined, initialize as an empty array
+                currentApplications = [];
+            }
+            else if (typeof currentApplications === 'string') {
+                // Parse the applications string into an array
+                try {
+                    currentApplications = JSON.parse(currentApplications);
+                } catch (parseError) {
+                    console.error(parseError);
+                    return res.status(500).json({ message: "Error parsing applications data" });
+                }
+            }
+            // Append the new application object to the array
+            const newApplication = {
+                Name: req.user.name,
+                Email: req.user.email
+            };
+            currentApplications.push(newApplication);
+
+            // Update the applications column in the database
+            connection.query(
+                "UPDATE company_job_post SET applications = ? WHERE experience = ?",
+                [JSON.stringify(currentApplications), data.experience],
+                (updateError, updateResults) => {
+                    if (updateError) {
+                        console.error(updateError);
+                        return res.status(500).json({ message: "Error updating data in the database" });
+                    }
+                    return res.status(200).json({ message: "Successfully updated data in the database" });
+                }
+            );
+        }
+        else {
+            return res.status(401).json({ message: "You can not apply for this job" });
         }
     })
 });
