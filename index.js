@@ -270,77 +270,100 @@ app.post('/company/jobpost', verifyToken, (req, res) => {
     if (!jobtitle || !address || !education || !experience) {
         return res.status(404).json({ message: "Fill out all th fields carefully!" });
     }
-    if (req.user.email !== undefined) {
+    connection.query("SELECT * FROM company WHERE email=?", [req.user.email], (error, results) => {
+        if (error) {
+            return res.status(401).json({ message: "Error fetching company data" });
+        }
+        const companyData = results[0];
+        console.log(companyData.email);
+        if (companyData.block == true) {
+            return res.status(402).json({ message: "You are blocked can't post a new job" });
+        }
+        if (req.user.email !== undefined) {
 
-        connection.query(
-            "INSERT INTO company_job_post (email, jobtitle, address, education, experience) VALUES (?, ?, ?, ?, ?)",
-            [req.user.email, jobtitle, address, education, experience],
-            (error, results) => {
-                if (error) {
-                    console.error(error);
-                    return res.status(401).json({ message: "Error inserting job post" });
+            connection.query(
+                "INSERT INTO company_job_post (email, jobtitle, address, education, experience) VALUES (?, ?, ?, ?, ?)",
+                [req.user.email, jobtitle, address, education, experience],
+                (error, results) => {
+                    if (error) {
+                        console.error(error);
+                        return res.status(401).json({ message: "Error inserting job post" });
+                    }
+                    return res.status(200).json({ message: "Job post successfully" });
                 }
-                return res.status(200).json({ message: "Job post successfully" });
-            }
-        );
-    } else {
-        res.status(400).json({ message: "Invalid user information in token" });
-    }
+            );
+        } else {
+            res.status(400).json({ message: "Invalid user information in token" });
+        }
+    })
+
 });
 
 //API for the students to apply for the job
 
 app.post('/students/apply', verifyToken, (req, res) => {
     const studentExperience = req.user.category;
-    console.log(studentExperience);
-    connection.query("SELECT * FROM company_job_post WHERE experience=? ", [studentExperience], (error, results) => {
+    connection.query("SELECT * FROM student WHERE email=? ", [req.user.email], (error, results) => {
+        const studentData = results[0];
+        console.log(studentData.block);
         if (error) {
-            console.error(error);
-            return res.status(500).json({ message: "Error Fetching data from database" })
+            return res.status(401).json({ message: "Error" });
         }
-        if (results.length === 0) {
-            return res.status(404).json({ message: "No job post found with the specified experience" });
+        if (studentData.block == true) {
+            return res.status(401).json({ message: "You are Blocked by the admin ! Can not apply for the job" });
         }
-        const data = results[0];
-        if (studentExperience == data.experience) {
-            let currentApplications = data.applications || [];
-            if (!currentApplications) {
-                // If null or undefined, initialize as an empty array
-                currentApplications = [];
-            }
-            else if (typeof currentApplications === 'string') {
-                // Parse the applications string into an array
-                try {
-                    currentApplications = JSON.parse(currentApplications);
-                } catch (parseError) {
-                    console.error(parseError);
-                    return res.status(500).json({ message: "Error parsing applications data" });
-                }
-            }
-            // Append the new application object to the array
-            const newApplication = {
-                Name: req.user.name,
-                Email: req.user.email
-            };
-            currentApplications.push(newApplication);
 
-            // Update the applications column in the database
-            connection.query(
-                "UPDATE company_job_post SET applications = ? WHERE experience = ?",
-                [JSON.stringify(currentApplications), data.experience],
-                (updateError, updateResults) => {
-                    if (updateError) {
-                        console.error(updateError);
-                        return res.status(500).json({ message: "Error updating data in the database" });
-                    }
-                    return res.status(200).json({ message: "Successfully updated data in the database" });
+        connection.query("SELECT * FROM company_job_post WHERE experience=? ", [studentExperience], (error, results) => {
+            if (error) {
+                console.error(error);
+                return res.status(500).json({ message: "Error Fetching data from database" })
+            }
+            if (results.length === 0) {
+                return res.status(404).json({ message: "No job post found with the specified experience" });
+            }
+            const data = results[0];
+            if (studentExperience == data.experience) {
+                let currentApplications = data.applications || [];
+                if (!currentApplications) {
+                    // If null or undefined, initialize as an empty array
+                    currentApplications = [];
                 }
-            );
-        }
-        else {
-            return res.status(401).json({ message: "You can not apply for this job" });
-        }
+                else if (typeof currentApplications === 'string') {
+                    // Parse the applications string into an array
+                    try {
+                        currentApplications = JSON.parse(currentApplications);
+                    } catch (parseError) {
+                        console.error(parseError);
+                        return res.status(500).json({ message: "Error parsing applications data" });
+                    }
+                }
+                // Append the new application object to the array
+                const newApplication = {
+                    Name: req.user.name,
+                    Email: req.user.email
+                };
+                currentApplications.push(newApplication);
+
+                // Update the applications column in the database
+                connection.query(
+                    "UPDATE company_job_post SET applications = ? WHERE experience = ?",
+                    [JSON.stringify(currentApplications), data.experience],
+                    (updateError, updateResults) => {
+                        if (updateError) {
+                            console.error(updateError);
+                            return res.status(500).json({ message: "Error updating data in the database" });
+                        }
+                        return res.status(200).json({ message: "Successfully updated data in the database" });
+                    }
+                );
+            }
+            else {
+                return res.status(401).json({ message: "You can not apply for this job" });
+            }
+        })
+
     })
+
 });
 
 
