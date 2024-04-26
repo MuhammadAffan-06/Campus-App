@@ -74,7 +74,7 @@ app.post('/createadmin', async (req, res) => {
 });
 
 //API for the admin approval and block/unblock
-app.put('/admin/approve', async (req, res) => {
+app.put('/admin/approve', verifyToken, async (req, res) => {
     const { email, approved, block, userType } = req.body;
 
     if (!email || !userType || (userType !== 'company' && userType !== 'student')) {
@@ -180,16 +180,14 @@ app.post('/login', async (req, res) => {
             if (!validPassword) {
                 return res.status(401).json({ message: "Invalid password" });
             }
-
-            const token = jwt.sign({ email: user.email, category: user.category }, process.env.JWT_SECRET_KEY);
+            const expiresInOneDay = 60 * 60 * 24;
+            const token = jwt.sign({ email: user.email, category: user.category }, process.env.JWT_SECRET_KEY, { expiresIn: expiresInOneDay});
             const data = {
                 name: user.name,
                 email: user.email,
                 category: user.category,
                 token: token,
             };
-
-            console.log(data);
             res.status(200).json(data);
         });
     });
