@@ -6,6 +6,6 @@ const connection = mysql.createConnection({
     database: 'campus_app'
 })
 
-connection.connect();
 
-module.exports =  connection;
+
+module.exports =  connection
