@@ -1,0 +1,71 @@
+.header {
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.header h1 {
+    color: #f1356d;
+}
+
+.header button {
+    margin: 20px;
+    color: gray;
+    background-color: transparent;
+    border-color: gray;
+    transition: background-color 0.5s ease, color 0.25s ease;
+}
+
+.header button:hover {
+    background-color: #f1356d;
+    color: white;
+    border: none;
+}
+
+.header h3 {
+    color: gray;
+}
+
+#form {
+    margin-top: 20px;
+}
+
+#form fieldset {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 40px;
+}
+
+#form legend {
+    padding: 0 10px;
+}
+
+#form label {
+    color: #f1356d;
+    font-size: x-large;
+}
+
+#form .inputFields {
+    display: flex;
+    flex-direction: column;
+}
+
+#form .inputFields input {
+    margin: 20px;
+    padding: 16px;
+    border-radius: 10px;
+    border: 2px solid gray;
+}
+
+#form button {
+    color: white;
+    background-color: #f1356d;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    float: right;
+    font-size: smaller;
+    margin-top: 5px;
+}
