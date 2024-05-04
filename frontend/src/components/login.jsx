@@ -1,4 +1,4 @@
-
+import '../styles/login.css';
 import Button from '@mui/material/Button';
 import SendIcon from '@mui/icons-material/Send';
 import { Link } from "react-router-dom";
@@ -13,7 +13,7 @@ const Login = () => {
             console.log("Fields are not valid");
         }
         try {
-            const response = await fetch('https:localhost:5001/auth/login',
+            const response = await fetch('http://localhost:5001/auth/login',
                 {
                     method: 'POST',
                     headers: {
@@ -29,7 +29,7 @@ const Login = () => {
         }
     }
     return (
-        <div className='header'>
+        <header className='loginHeader'>
             <h1>Welcome to Campus ABC</h1>
             <h3>Don't have an account? Create one</h3>
             <Link to={"/registration"}>
@@ -37,10 +37,10 @@ const Login = () => {
                     Register Here
                 </Button>
             </Link>
-            <form onSubmit={handleSubmit} id='form'>
+            <form onSubmit={handleSubmit} id='loginForm'>
                 <fieldset>
                     <legend>Login</legend>
-                    <div className='inputFields'>
+                    <div className='loginInputFields'>
                         <label htmlFor="email">Email:</label>
                         <input
                             required
@@ -51,7 +51,7 @@ const Login = () => {
                             onChange={(e) => setEmail(e.target.value)}>
                         </input>
                     </div>
-                    <div className='inputFields'>
+                    <div className='loginInputFields'>
                         <label htmlFor="password">Password:</label>
                         <input
                             id='password'
@@ -66,7 +66,7 @@ const Login = () => {
                     </Button>
                 </fieldset>
             </form>
-        </div>
+        </header>
     );
 }
 
