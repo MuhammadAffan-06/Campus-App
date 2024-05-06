@@ -6,7 +6,7 @@ const adminRouter = express.Router()
 
 adminRouter
     .use(verifyToken)
-    .post('/createadmin', createAdmin)
+    .post('/create-admin', createAdmin)
     .put('/admin/approve', verifyToken, approveAdmin)
     .get('/admin/companies', verifyToken, getCompaniesData)
     .get('/admin/students', verifyToken, getStudentsData)
