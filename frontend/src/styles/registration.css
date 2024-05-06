@@ -1,0 +1,54 @@
+.registrationHeader {
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.registrationHeader h1 {
+    color: #f1356d;
+    text-decoration: underline;
+}
+
+#registrationForm .registrationInputFields {
+    display: flex;
+    flex-direction: column;
+}
+
+#registrationForm .registrationInputFields input {
+    margin: 20px;
+    padding: 16px;
+    border-radius: 10px;
+    border: 2px solid gray;
+}
+
+#registrationForm button {
+    color: #f1356d;
+    float: right;
+}
+
+#registrationForm button:hover {
+    background-color: #f1356d;
+    color: white;
+}
+
+.categoryDropdown {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px;
+    margin-top: 5px;
+}
+
+.registrationHeader .loginButton {
+
+    background-color: white;
+    color: #f1356d;
+}
+
+.registrationHeader .loginButton:hover {
+    background-color: #f1356d;
+    color: white;
+}

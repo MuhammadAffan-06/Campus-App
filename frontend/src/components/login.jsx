@@ -1,7 +1,7 @@
 import '../styles/login.css';
 import Button from '@mui/material/Button';
 import SendIcon from '@mui/icons-material/Send';
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useState } from 'react';
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -21,6 +21,8 @@ const Login = () => {
                     },
                     body: JSON.stringify({ email, password })
                 });
+            const data = await response.json();
+            console.log(data);
             if (!response.ok) {
                 throw new Error("Login failed");
             }
@@ -30,7 +32,7 @@ const Login = () => {
     }
     return (
         <header className='loginHeader'>
-            <h1>Welcome to Campus ABC</h1>
+            <h1>Welcome to Campus App</h1>
             <h3>Don't have an account? Create one</h3>
             <Link to={"/registration"}>
                 <Button variant="text" color="primary">
