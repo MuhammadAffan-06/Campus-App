@@ -1,12 +1,13 @@
 import '../styles/login.css';
 import Button from '@mui/material/Button';
 import SendIcon from '@mui/icons-material/Send';
-import { Link, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from 'react';
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!email || !password) {
@@ -23,6 +24,9 @@ const Login = () => {
                 });
             const data = await response.json();
             console.log(data);
+            // if (data.category === "admin") {
+            //     navigate('/registration')
+            // }
             if (!response.ok) {
                 throw new Error("Login failed");
             }

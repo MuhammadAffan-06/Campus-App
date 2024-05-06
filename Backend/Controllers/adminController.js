@@ -26,7 +26,7 @@ const createAdmin = async (req, res) => {
             }
         }
 
-        connection.query("INSERT INTO admin (name, email, password, category) VALUES (?, ?, ?, ?)", [name, email, hashedPassword, false], (error, results) => {
+        connection.query("INSERT INTO admin (name, email, password) VALUES (?, ?, ?)", [name, email, hashedPassword], (error, results) => {
             if (error) {
                 console.error(error);
                 return res.status(500).json({ message: "Error creating admin" });
@@ -115,11 +115,11 @@ const getJobsPostedData = async (req, res) => {
     })
 };
 
-module.exports=
+module.exports =
 {
-    getJobsPostedData,
-    getStudentsData,
-    getCompaniesData,
+    createAdmin,
     approveAdmin,
-    createAdmin
+    getCompaniesData,
+    getStudentsData,
+    getJobsPostedData
 };

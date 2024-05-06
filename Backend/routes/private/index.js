@@ -6,8 +6,8 @@ const { verifyToken } = require('../../middlewares/middleware')
 const privateRouter = express.Router()
 
 privateRouter
-    .use(verifyToken)
     .use('/admin', adminRouter)
+    .use(verifyToken)
     .use('/company', companyRouter)
     .use('/student', studentRouter)
 
