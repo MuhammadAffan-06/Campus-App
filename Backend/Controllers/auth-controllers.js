@@ -96,11 +96,11 @@ const registration = async (req, res) => {
                 if (!category) {
                     return res.status(400).json({ message: "Category not Found" });
                 }
-                insertQuery = "INSERT INTO student (name, email, password, category, approved, block) VALUES (?,?,?,?,?,?)";
-                insertValues = [name, email, hashedPassword, category, false, true];
+                insertQuery = "INSERT INTO student (name, email, password,approved, block) VALUES (?,?,?,?,?)";
+                insertValues = [name, email, hashedPassword, false, true];
             } else if (type === 'company') {
-                insertQuery = "INSERT INTO company (name, email, password, category, approved, block) VALUES (?,?,?,?,?,?)";
-                insertValues = [name, email, hashedPassword, false, false, false];
+                insertQuery = "INSERT INTO company (name, email, password, approved, block) VALUES (?,?,?,?,?)";
+                insertValues = [name, email, hashedPassword, false, false];
             } else {
                 return res.status(400).json({ message: "Invalid registration type" });
             }

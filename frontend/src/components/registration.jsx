@@ -1,6 +1,6 @@
 import "../styles/registration.css";
 import Button from '@mui/material/Button';
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 
 
@@ -10,6 +10,10 @@ const Registration = () => {
     const [selectedProfession, setSelectedProfession] = useState('student');
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
     const handleProfessionChange = (event) => {
         setSelectedProfession(event.target.value);
         setShowCategoryDropdown(event.target.value === 'student');
@@ -20,9 +24,23 @@ const Registration = () => {
         setSelectedCategory(event.target.value);
     };
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        // Submit form data (replace with your actual form submission logic)
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name || !email || !password || !selectedProfession) {
+            console.log("Please fill out the form correctly");
+        }
+        try {
+            const response = await fetch('http://localhost:5001/auth/registration',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, password, type: selectedProfession, category: selectedCategory })
+                });
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (
@@ -35,17 +53,32 @@ const Registration = () => {
             <form id="registrationForm" onSubmit={handleSubmit}>
                 <div className="registrationInputFields">
                     <label htmlFor="name">Name:</label>
-                    <input type="text" placeholder="demo"
+                    <input
+                        type="text"
+                        placeholder="demo"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         id="name"
                         required />
                 </div>
                 <div className="registrationInputFields">
                     <label htmlFor="email">Email:</label>
-                    <input required type="text" placeholder="demo@gmail.com" id="email" />
+                    <input
+                        required
+                        type="text"
+                        placeholder="demo@gmail.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        id="email" />
                 </div>
                 <div className="registrationInputFields">
                     <label htmlFor="password">Password:</label>
-                    <input type="password" placeholder="*******" id="password"
+                    <input
+                        type="password"
+                        placeholder="*******"
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required />
                 </div>
                 <div>

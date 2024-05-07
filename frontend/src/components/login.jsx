@@ -1,7 +1,7 @@
 import '../styles/login.css';
 import Button from '@mui/material/Button';
 import SendIcon from '@mui/icons-material/Send';
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useState } from 'react';
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -22,14 +22,17 @@ const Login = () => {
                     },
                     body: JSON.stringify({ email, password })
                 });
-            const data = await response.json();
-            console.log(data);
-            // if (data.category === "admin") {
-            //     navigate('/registration')
-            // }
+            if (response.status === 403) {
+                alert("This id is not approved yet");
+            }
             if (!response.ok) {
                 throw new Error("Login failed");
             }
+            alert("Login successful")
+            const data = await response.json();
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('category', data.category);
+            navigate('/dashboard', { replace: true }); 
         } catch (error) {
             setError("Invalid login credentials", error);
         }
