@@ -23,12 +23,12 @@ const Login = () => {
                     body: JSON.stringify({ email, password })
                 });
             if (response.status === 403) {
-                alert("This id is not approved yet");
+                return alert("This id is not approved yet");
             }
             if (!response.ok) {
                 throw new Error("Login failed");
             }
-            alert("Login successful")
+            // alert("Login successful")
             const data = await response.json();
             sessionStorage.setItem('token', data.token);
             sessionStorage.setItem('category', data.category);

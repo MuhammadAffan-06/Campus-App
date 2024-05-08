@@ -20,7 +20,7 @@ const Dashboard = () => {
     }
 
     // Render content based on category
-    if (category === 'student') {
+    if (category === 'junior') {
         return (
             <div>
                 <h1>Student Dashboard</h1>
@@ -40,8 +40,6 @@ const Dashboard = () => {
     } else if (category === 'admin') {
         return (
             <div>
-                <h1>Admin Dashboard</h1>
-                {/* Admin specific content */}
                 <Admin />
             </div>
         );
