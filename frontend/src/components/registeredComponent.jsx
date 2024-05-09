@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { styled } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -8,13 +8,14 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-
+import Typography from '@mui/material/Typography';
+import '../styles/table.css'
 
 
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
-        backgroundColor: theme.palette.common.black,
+        backgroundColor: "#e3104f",
         color: theme.palette.common.white,
     },
     [`&.${tableCellClasses.body}`]: {
@@ -26,15 +27,15 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
     '&:nth-of-type(odd)': {
         backgroundColor: theme.palette.action.hover,
     },
-    // hide last border
     '&:last-child td, &:last-child th': {
         border: 0,
     },
 }));
 const Registrations = () => {
-    const [fetchedData, setFetchedData] = useState([]);
+    const [fetchedStudentData, setFetchedStudentData] = useState([]);
+    const [fetchedCompanyData, setFetchedCompanyData] = useState([]);
 
-    const showContent = async () => {
+    const showContentStudent = async () => {
 
         const response = await fetch('http://localhost:5001/admin/admin/students',
             {
@@ -43,42 +44,79 @@ const Registrations = () => {
             });
 
         const data = await response.json();
-        setFetchedData(data);
+        setFetchedStudentData(data);
         if (!response.ok) {
             console.log('Error');
         }
-        else {
-            console.table(fetchedData);
+    }
+    const showContentCompany = async () => {
+        const response = await fetch('http://localhost:5001/admin/admin/companies', {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('token') }
+        });
+        const data = await response.json()
+        setFetchedCompanyData(data);
+        if (!response.ok) {
+            console.log("failed");
         }
-
     }
     return (
-        <TableContainer component={Paper} data={fetchedData}>
-            <Table sx={{ minWidth: 700 }} aria-label="customized table">
-                <TableHead>
-                    <TableRow>
-                        <StyledTableCell>Name</StyledTableCell>
-                        <StyledTableCell align="right">Email</StyledTableCell>
-                        <StyledTableCell align="right">Approved</StyledTableCell>
-                        <StyledTableCell align="right">Block</StyledTableCell>
-                        <StyledTableCell align="right">Category</StyledTableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {fetchedData.map((students) => (
-                        <StyledTableRow key={students.name}>
-                            <StyledTableCell component="th" scope="row">
-                                {students.name}
-                            </StyledTableCell>
-                            <StyledTableCell align="right">{students.email}</StyledTableCell>
-                            <StyledTableCell align="right">{students.approved}</StyledTableCell>
-                            <StyledTableCell align="right">{students.block}</StyledTableCell>
-                            <StyledTableCell align="right">{students.category}</StyledTableCell>
-                        </StyledTableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
+        <div>
+            <TableContainer component={Paper} data={showContentCompany()}>
+                <Typography variant='h4' sx={{ minWidth: 700 }} fontFamily="'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif" >Company Record</Typography>
+                <Table sx={{ minWidth: 700 }} aria-label="customized table">
+                    <TableHead>
+
+                        <TableRow>
+                            <StyledTableCell>Name</StyledTableCell>
+                            <StyledTableCell align="right">Email</StyledTableCell>
+                            <StyledTableCell align="right">Approved</StyledTableCell>
+                            <StyledTableCell align="right">Blocked</StyledTableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {fetchedCompanyData.map((company) => (
+                            <StyledTableRow key={company.email}>
+                                <StyledTableCell component="th" scope="row">
+                                    {company.name}
+                                </StyledTableCell>
+                                <StyledTableCell align="right">{company.email}</StyledTableCell>
+                                <StyledTableCell align="right">{company.approved === 1 ? 'Yes' : 'No'}</StyledTableCell>
+                                <StyledTableCell align="right">{company.block === 1 ? 'Yes' : 'No'}</StyledTableCell>
+                            </StyledTableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+            <TableContainer component={Paper} data={showContentStudent()}>
+                <Typography variant='h4' sx={{ minWidth: 700 }} fontFamily="'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif">Students Record</Typography>
+                <Table sx={{ minWidth: 700 }} aria-label="customized table">
+                    <TableHead>
+
+                        <TableRow>
+                            <StyledTableCell>Name</StyledTableCell>
+                            <StyledTableCell align="right">Email</StyledTableCell>
+                            <StyledTableCell align="right">Approved</StyledTableCell>
+                            <StyledTableCell align="right">Blocked</StyledTableCell>
+                            <StyledTableCell align="right">Category</StyledTableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {fetchedStudentData.map((students) => (
+                            <StyledTableRow key={students.email}>
+                                <StyledTableCell component="th" scope="row">
+                                    {students.name}
+                                </StyledTableCell>
+                                <StyledTableCell align="right">{students.email}</StyledTableCell>
+                                <StyledTableCell align="right">{students.approved === 1 ? 'Yes' : 'No'}</StyledTableCell>
+                                <StyledTableCell align="right">{students.block === 1 ? 'Yes' : 'No'}</StyledTableCell>
+                                <StyledTableCell align="right">{students.category}</StyledTableCell>
+                            </StyledTableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </div>
     );
 }
 

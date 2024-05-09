@@ -75,7 +75,7 @@ const approveAdmin = async (req, res) => {
 
 // Function to get data about companies
 const getCompaniesData = async (req, res) => {
-    connection.query("SELECT name,email,approved,block FROM company", (error, results) => {
+    connection.query("SELECT name,email,approved,block,category FROM company", (error, results) => {
         if (error) {
             return res.status(401).json("Error fetching the data from database");
         }

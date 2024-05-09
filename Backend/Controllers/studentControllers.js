@@ -30,11 +30,9 @@ const applyForJob = async (req, res) => {
             if (studentExperience == data.experience) {
                 let currentApplications = data.applications || [];
                 if (!currentApplications) {
-                    // If null or undefined, initialize as an empty array
                     currentApplications = [];
                 }
                 else if (typeof currentApplications === 'string') {
-                    // Parse the applications string into an array
                     try {
                         currentApplications = JSON.parse(currentApplications);
                     } catch (parseError) {
@@ -42,7 +40,7 @@ const applyForJob = async (req, res) => {
                         return res.status(500).json({ message: "Error parsing applications data" });
                     }
                 }
-                // Append the new application object to the array
+
                 const newApplication = {
                     Name: req.user.name,
                     Email: req.user.email
@@ -69,7 +67,7 @@ const applyForJob = async (req, res) => {
     })
 };
 ;
-module.exports=
+module.exports =
 {
     applyForJob
 };

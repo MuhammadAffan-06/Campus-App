@@ -10,7 +10,7 @@ const { verifyToken } = require('../middlewares/middleware')
 const postJob = async (req, res) => {
     const { jobtitle, address, education, experience } = req.body;
     if (!jobtitle || !address || !education || !experience) {
-        return res.status(404).json({ message: "Fill out all th fields carefully!" });
+        return res.status(404).json({ message: "Fill out all the fields carefully!" });
     }
     connection.query("SELECT * FROM company WHERE email=?", [req.user.email], (error, results) => {
         if (error) {
@@ -39,6 +39,6 @@ const postJob = async (req, res) => {
         }
     })
 }
-module.exports={
+module.exports = {
     postJob
 };

@@ -29,15 +29,27 @@ const Registration = () => {
         if (!name || !email || !password || !selectedProfession) {
             console.log("Please fill out the form correctly");
         }
+        const body = {
+            name,
+            email,
+            password,
+            type: selectedProfession,
+        };
+
+        // Include category only if student is selected and a category is chosen
+        if (selectedProfession === 'student' && selectedCategory) {
+            body.category = selectedCategory;
+        }
+
         try {
-            const response = await fetch('http://localhost:5001/auth/registration',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ name, email, password, type: selectedProfession, category: selectedCategory })
-                });
+            const response = await fetch('http://localhost:5001/auth/registration', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
+            // Handle response (e.g., navigate to success page)
         } catch (error) {
             console.error(error);
         }

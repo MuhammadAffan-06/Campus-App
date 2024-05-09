@@ -100,7 +100,7 @@ const registration = async (req, res) => {
                 insertValues = [name, email, hashedPassword, category, false, true];
             } else if (type === 'company') {
                 insertQuery = "INSERT INTO company (name, email, password, approved, block) VALUES (?,?,?,?,?)";
-                insertValues = [name, email, hashedPassword, false, false];
+                insertValues = [name, email, hashedPassword, false, false,];
             } else {
                 return res.status(400).json({ message: "Invalid registration type" });
             }
