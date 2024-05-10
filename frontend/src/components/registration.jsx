@@ -1,10 +1,11 @@
 import "../styles/registration.css";
 import Button from '@mui/material/Button';
 import { Link, Navigate } from "react-router-dom";
-
+import "./signupmodal"
 
 
 import React, { useState } from 'react'; // Import useState hook
+import BasicModal from "./signupmodal";
 
 const Registration = () => {
     const [selectedProfession, setSelectedProfession] = useState('student');
@@ -49,7 +50,9 @@ const Registration = () => {
                 },
                 body: JSON.stringify(body),
             });
-            // Handle response (e.g., navigate to success page)
+            if (response.status === 400) {
+                alert("Email already in use")
+            }
         } catch (error) {
             console.error(error);
         }
@@ -129,7 +132,8 @@ const Registration = () => {
                         </select>
                     )}
                 </div>
-                <Button variant="text" type="submit">Signup</Button>
+                
+                <Button variant="text" type="submit"><BasicModal /></Button>
             </form>
         </div>
     );

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { styled } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -35,34 +35,43 @@ const Registrations = () => {
     const [fetchedStudentData, setFetchedStudentData] = useState([]);
     const [fetchedCompanyData, setFetchedCompanyData] = useState([]);
 
-    const showContentStudent = async () => {
+    useEffect(() => {
+        const showContentStudent = async () => {
 
-        const response = await fetch('http://localhost:5001/admin/admin/students',
-            {
+            const response = await fetch('http://localhost:5001/admin/admin/students',
+                {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('token') }
+                });
+
+            const data = await response.json();
+            setFetchedStudentData(data);
+            if (!response.ok) {
+                console.log('Error');
+            }
+        }
+        showContentStudent();
+    }, [])
+
+
+    useEffect(() => {
+        const showContentCompany = async () => {
+            const response = await fetch('http://localhost:5001/admin/admin/companies', {
                 method: 'GET',
                 headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('token') }
             });
+            const data = await response.json()
+            setFetchedCompanyData(data);
+            if (!response.ok) {
+                console.log("failed");
+            }
+        }
+        showContentCompany();
+    }, []);
 
-        const data = await response.json();
-        setFetchedStudentData(data);
-        if (!response.ok) {
-            console.log('Error');
-        }
-    }
-    const showContentCompany = async () => {
-        const response = await fetch('http://localhost:5001/admin/admin/companies', {
-            method: 'GET',
-            headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('token') }
-        });
-        const data = await response.json()
-        setFetchedCompanyData(data);
-        if (!response.ok) {
-            console.log("failed");
-        }
-    }
     return (
         <div>
-            <TableContainer component={Paper} data={showContentCompany()}>
+            <TableContainer component={Paper}>
                 <Typography variant='h4' sx={{ minWidth: 700 }} fontFamily="'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif" >Company Record</Typography>
                 <Table sx={{ minWidth: 700 }} aria-label="customized table">
                     <TableHead>
@@ -88,7 +97,7 @@ const Registrations = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
-            <TableContainer component={Paper} data={showContentStudent()}>
+            <TableContainer component={Paper}>
                 <Typography variant='h4' sx={{ minWidth: 700 }} fontFamily="'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif">Students Record</Typography>
                 <Table sx={{ minWidth: 700 }} aria-label="customized table">
                     <TableHead>

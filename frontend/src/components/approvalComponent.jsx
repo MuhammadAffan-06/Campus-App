@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { styled } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -33,51 +33,62 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
         border: 0,
     },
 }));
-const Registrations = () => {
+const Approval = () => {
     const [fetchedStudentData, setFetchedStudentData] = useState([]);
     const [fetchedCompanyData, setFetchedCompanyData] = useState([]);
-    const [email, setEmail] = useState('');
-    const [userType, setUserType] = useState('');
 
-    const showContentStudent = async () => {
 
-        const response = await fetch('http://localhost:5001/admin/admin/students',
-            {
+
+    useEffect(() => {
+        const showContentStudent = async () => {
+
+            const response = await fetch('http://localhost:5001/admin/admin/students',
+                {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('token') }
+                });
+
+            const data = await response.json();
+            setFetchedStudentData(data);
+            if (!response.ok) {
+                console.log('Error');
+            }
+        }
+        showContentStudent();
+    }, []);
+
+    useEffect(() => {
+        const showContentCompany = async () => {
+            const response = await fetch('http://localhost:5001/admin/admin/companies', {
                 method: 'GET',
                 headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('token') }
             });
+            const data = await response.json();
+            setFetchedCompanyData(data);
+            if (!response.ok) {
+                console.log("failed");
+            }
+        }
+        showContentCompany();
+    }, [])
 
-        const data = await response.json();
-        setFetchedStudentData(data);
-        if (!response.ok) {
-            console.log('Error');
-        }
-    }
-    const showContentCompany = async () => {
-        const response = await fetch('http://localhost:5001/admin/admin/companies', {
-            method: 'GET',
-            headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('token') }
-        });
-        const data = await response.json()
-        setEmail(data.email);
-        setUserType(data.category);
-        setFetchedCompanyData(data);
-        if (!response.ok) {
-            console.log("failed");
-        }
-    }
-    const blockHandle = async () => {
+    const blockHandle = async (email, userType, approved, block) => {
+        approved = false;
+        block = true;
         const response = await fetch('http://localhost:5001/admin/admin/approve',
             {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'headers': { "Authorization": "Bearer" + sessionStorage.getItem("Token") }
+                    'Authorization': 'Bearer ' + sessionStorage.getItem('token')
                 },
-                body: JSON.stringify({ email, userType })
+                body: JSON.stringify({ email, userType, approved, block })
             });
         if (!response.ok) {
-            console.log("error")
+            console.error('Error approving/blocking user');
+        } else {
+            // Handle successful approval/blocking (optional)
+            console.log('User status updated successfully');
         }
     }
     const approveHandle = () => {
@@ -85,7 +96,7 @@ const Registrations = () => {
     }
     return (
         <div>
-            <TableContainer component={Paper} data={showContentCompany()}>
+            <TableContainer component={Paper}>
                 <Typography variant='h4' sx={{ minWidth: 700 }} fontFamily="'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif" >Company Record</Typography>
                 <Table sx={{ minWidth: 700 }} aria-label="customized table">
                     <TableHead>
@@ -113,7 +124,7 @@ const Registrations = () => {
                                     variant="outlined"
                                     aria-label="Disabled button group"
                                 >
-                                    <Button onClick={() => blockHandle()}>Block</Button>
+                                    <Button onClick={() => blockHandle(company.email, company.category, company.block, company.approved)}>Block</Button>
                                     <Button onClick={() => approveHandle()}>Approve</Button>
                                 </ButtonGroup></StyledTableCell>
                             </StyledTableRow>
@@ -121,7 +132,7 @@ const Registrations = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
-            <TableContainer component={Paper} data={showContentStudent()}>
+            <TableContainer component={Paper} >
                 <Typography variant='h4' sx={{ minWidth: 700 }} fontFamily="'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif">Students Record</Typography>
                 <Table sx={{ minWidth: 700 }} aria-label="customized table">
                     <TableHead>
@@ -132,17 +143,16 @@ const Registrations = () => {
                             <StyledTableCell align="right">Category</StyledTableCell>
                             <StyledTableCell align="right">Blocked</StyledTableCell>
                             <StyledTableCell align="right">Action</StyledTableCell>
-                            {/* <StyledTableCell align="right">Category</StyledTableCell> */}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {fetchedStudentData.map((students) => (
                             <StyledTableRow key={students.email}>
+
                                 <StyledTableCell component="th" scope="row">
                                     {students.name}
                                 </StyledTableCell>
                                 <StyledTableCell align="right">{students.email}</StyledTableCell>
-                                {/* <StyledTableCell align="right">{students.approved === 1 ? 'Yes' : 'No'}</StyledTableCell> */}
                                 <StyledTableCell align="right">{students.category}</StyledTableCell>
                                 <StyledTableCell align="right">{students.block === 1 ? 'Yes' : 'No'}</StyledTableCell>
                                 <StyledTableCell align="right"><ButtonGroup
@@ -163,4 +173,4 @@ const Registrations = () => {
     );
 }
 
-export default Registrations;
+export default Approval;
