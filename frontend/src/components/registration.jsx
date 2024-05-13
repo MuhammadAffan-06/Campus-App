@@ -1,11 +1,8 @@
 import "../styles/registration.css";
 import Button from '@mui/material/Button';
-import { Link, Navigate } from "react-router-dom";
-import "./signupmodal"
-
-
-import React, { useState } from 'react'; // Import useState hook
-import BasicModal from "./signupmodal";
+import { Link } from "react-router-dom";
+import React, { useState } from 'react';
+import BasicModal from "./signUpModal";
 
 const Registration = () => {
     const [selectedProfession, setSelectedProfession] = useState('student');
@@ -14,7 +11,8 @@ const Registration = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-
+    const [showModal, setShowModal] = useState(false);
+    const [open, setOpen] = useState(false);
     const handleProfessionChange = (event) => {
         setSelectedProfession(event.target.value);
         setShowCategoryDropdown(event.target.value === 'student');
@@ -50,10 +48,14 @@ const Registration = () => {
                 },
                 body: JSON.stringify(body),
             });
+            if (response.status === 201) {
+                setOpen(true);
+            }
             if (response.status === 400) {
                 alert("Email already in use")
             }
         } catch (error) {
+            // setOpen(true);
             console.error(error);
         }
     };
@@ -132,8 +134,10 @@ const Registration = () => {
                         </select>
                     )}
                 </div>
-                
-                <Button variant="text" type="submit"><BasicModal /></Button>
+
+                <BasicModal setOpen={setOpen} open={open} />
+
+                <Button variant="text" type="submit" >Signup</Button>
             </form>
         </div>
     );

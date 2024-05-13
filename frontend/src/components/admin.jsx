@@ -19,6 +19,7 @@ import Typography from '@mui/material/Typography';
 import Approval from './approvalComponent'
 import Registrations from './registeredComponent'
 import Jobsposted from './jobsPosted'
+import BlockSection from './blockSection'
 const drawerWidth = 240;
 
 function ResponsiveDrawer(props) {
@@ -47,7 +48,7 @@ function ResponsiveDrawer(props) {
             <Toolbar />
             <Divider />
             <List>
-                {['Registrations', 'Approval', 'Jobs Posted'].map((text, index) => (
+                {['Registrations', 'Approval', 'Jobs Posted','Block Section'].map((text, index) => (
                     <ListItem key={text} disablePadding>
                         <ListItemButton onClick={() => setSelectedListItem(text)} >
                             <ListItemIcon>
@@ -134,6 +135,7 @@ function ResponsiveDrawer(props) {
                         {selectedListItem === 'Registrations' && <Registrations />}  {/* Render Registrations component */}
                         {selectedListItem === 'Approval' && <Approval />}        {/* Render Approval component */}
                         {selectedListItem === 'Jobs Posted' && <Jobsposted />}  {/* Render Jobs Posted component */}
+                        {selectedListItem === 'Block Section' && <BlockSection />}  {/* Render Jobs Posted component */}
                         {/* Add similar checks for other list items */}
                         {!selectedListItem && <Typography paragraph>Please select an item from the list.</Typography>} {/* Display message if no item is selected */}
                     </Box>

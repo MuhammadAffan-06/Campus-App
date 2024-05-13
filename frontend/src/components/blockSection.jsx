@@ -33,7 +33,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
         border: 0,
     },
 }));
-const Approval = () => {
+const BlockSection = () => {
     const [fetchedStudentData, setFetchedStudentData] = useState([]);
     const [fetchedCompanyData, setFetchedCompanyData] = useState([]);
 
@@ -72,50 +72,46 @@ const Approval = () => {
         showContentCompany();
     }, [])
 
-    const handleApproval = async (email) => {
+    const handleBlock = async (email) => {
         const existingCompany = fetchedCompanyData.find(company => company.email === email);
         const existingStudent = fetchedStudentData.find(student => student.email === email);
+        let approved, userType, updatedData;
 
         if (existingCompany) {
-            // Handle approval logic for companies
-            let approved = true;
-            let block = existingCompany ? existingCompany.block : null;
-
-            const response = await fetch('http://localhost:5001/admin/admin/approve', {
-                method: 'PUT',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + sessionStorage.getItem("token")
-                },
-                body: JSON.stringify({ email, userType: 'company', approved, block })
-            });
-            if (response.status === 200) {
-                const updatedCompanyData = fetchedCompanyData.filter(company => company.email !== email);
-                setFetchedCompanyData(updatedCompanyData);
-                console.log("Approved")
-            }
+            approved = existingCompany.approved;
+            userType = 'company';
+            updatedData = fetchedCompanyData.map(company =>
+                company.email === email ? { ...company, block: company.block === 1 ? 0 : 1 } : company
+            );
+            
+            setFetchedCompanyData(updatedData);
         } else if (existingStudent) {
-            // Handle approval logic for students
-            let approved = true;
-            let block = existingStudent ? existingStudent.block : null;
-
-            const response = await fetch('http://localhost:5001/admin/admin/approve', {
-                method: 'PUT',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + sessionStorage.getItem("token")
-                },
-                body: JSON.stringify({ email, userType: 'student', approved, block })
-            });
-            if (response.status === 200) {
-                const updatedStudentData = fetchedStudentData.filter(student => student.email !== email);
-                setFetchedStudentData(updatedStudentData);
-                console.log("Approved")
-            }
+            approved = existingStudent.approved;
+            userType = 'student';
+            updatedData = fetchedStudentData.map(student =>
+                student.email === email ? { ...student, block: student.block === 1 ? 0 : 1 } : student
+            );
+            setFetchedStudentData(updatedData);
         } else {
             console.error('No record found for email:', email);
+            return;
+        }
+
+        try {
+            const response = await fetch("http://localhost:5001/admin/admin/approve", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + sessionStorage.getItem("token")
+                },
+                body: JSON.stringify({ email, userType, block: updatedData.find(item => item.email === email).block })
+            });
+            console.log(response.status);
+        } catch (error) {
+            console.error(`Error blocking/unblocking ${userType}:`, error);
         }
     };
+
 
 
     return (
@@ -135,17 +131,18 @@ const Approval = () => {
                     </TableHead>
                     <TableBody>
                         {fetchedCompanyData.map((company) => (
-                            company.approved !== 1 && (
-                                <StyledTableRow key={company.email}>
-                                    <StyledTableCell component="th" scope="row">
-                                        {company.name}
-                                    </StyledTableCell>
-                                    <StyledTableCell align="right">{company.category}</StyledTableCell>
-                                    <StyledTableCell align="right">{company.email}</StyledTableCell>
-                                    <StyledTableCell align="right">{company.approved === 1 ? 'Yes' : 'No'}</StyledTableCell>
-                                    <StyledTableCell align="right">{company.block === 1 ? 'Yes' : 'No'}</StyledTableCell>
-                                    <StyledTableCell align="right"><Button onClick={() => handleApproval(company.email, company.category)} variant='outlined'>Approval</Button></StyledTableCell>
-                                </StyledTableRow>)
+                            <StyledTableRow key={company.email}>
+                                <StyledTableCell component="th" scope="row">
+                                    {company.name}
+                                </StyledTableCell>
+                                <StyledTableCell align="right">{company.category}</StyledTableCell>
+                                <StyledTableCell align="right">{company.email}</StyledTableCell>
+                                <StyledTableCell align="right">{company.approved === 1 ? 'Yes' : 'No'}</StyledTableCell>
+                                <StyledTableCell align="right">{company.block === 1 ? 'Yes' : 'No'}</StyledTableCell>
+                                <StyledTableCell align="right"> <Button variant='outlined' onClick={() => handleBlock(company.email)}>
+                                    {company.block === 1 ? 'Unblock' : 'Block'}
+                                </Button></StyledTableCell>
+                            </StyledTableRow>
                         ))}
                     </TableBody>
                 </Table>
@@ -158,7 +155,6 @@ const Approval = () => {
                         <TableRow>
                             <StyledTableCell>Name</StyledTableCell>
                             <StyledTableCell align="right">Email</StyledTableCell>
-                            <StyledTableCell align="right">Profession</StyledTableCell>
                             <StyledTableCell align="right">Category</StyledTableCell>
                             <StyledTableCell align="right">Blocked</StyledTableCell>
                             <StyledTableCell align="right">Action</StyledTableCell>
@@ -172,13 +168,11 @@ const Approval = () => {
                                     {students.name}
                                 </StyledTableCell>
                                 <StyledTableCell align="right">{students.email}</StyledTableCell>
-                                <StyledTableCell align="right">Student</StyledTableCell>
                                 <StyledTableCell align="right">{students.category}</StyledTableCell>
                                 <StyledTableCell align="right">{students.block === 1 ? 'Yes' : 'No'}</StyledTableCell>
-                                <StyledTableCell align="right">
-                                    <Button variant='outlined' onClick={() => handleApproval(students.email)}>Approval</Button>
-                                </StyledTableCell>
-
+                                <StyledTableCell align="right"> <Button variant='outlined' onClick={() => handleBlock(students.email)}>
+                                    {students.block === 1 ? 'Unblock' : 'Block'}
+                                </Button></StyledTableCell>
                             </StyledTableRow>
                         ))}
                     </TableBody>
@@ -188,4 +182,4 @@ const Approval = () => {
     );
 }
 
-export default Approval;
+export default BlockSection;
